@@ -3,7 +3,7 @@ cd "$(dirname "$0")"
 
 submission_path=sample_val_preds_no_saliency_scores.jsonl
 gt_path=../data/ovis_val_release.jsonl
-save_path=sample_val_preds_metrics-nosortscore.json
+save_path=sample_val_preds_metrics.json
 
 python3 eval.py \
 --submission_path ${submission_path} \

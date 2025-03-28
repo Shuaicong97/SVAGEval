@@ -1,0 +1,5 @@
+{"qid": 5095, "query": "The rabbit moves and starts eating", "vid": "63263f3f", "pred_relevant_windows": [[14.0,16.0,0.9972], [18.0,24.0,9234]]}
+{"qid": 5096, "query": "The rabbit stands in front of another rabbit", "vid": "63263f3f", "pred_relevant_windows": [[20.0,35.0,0.8764]]}
+{"qid": 5113, "query": "The giraffe bends its neck around another giraffe", "vid": "fb4a7958", "pred_relevant_windows": [[10.0,30.0,0.7345]]}
+{"qid": 5223, "query": "The cat turns around and walks away from the camera", "vid": "cfff47c3", "pred_relevant_windows": [[160.0,210.0,0.8345]]}
+{"qid": 5974, "query": "this is a test query for over 150 frames", "vid": "test", "pred_relevant_windows": [[1.0,240.0,0.9998]]}
