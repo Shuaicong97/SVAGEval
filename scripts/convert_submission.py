@@ -96,3 +96,79 @@ def generate_predict_dict(submission_file, output_dir):
                 f.write(json.dumps(output_entry) + "\n")
 
     print(f"Saved predict dict to {output_file}")
+
+def convert_query_string(query):
+    return query.lower().replace(" ", "-")
+
+def ensure_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+def process_spatial_predictions(submission_file_path, output_base):
+    with open(submission_file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    for query in data["queries"]:
+        video_name = query["video_name"]
+        query_str = query["query"]
+        tracks = query["tracks"]
+
+        converted_query = convert_query_string(query_str)
+        output_dir = os.path.join(output_base, video_name, converted_query)
+        ensure_dir(output_dir)
+        predict_file_path = os.path.join(output_dir, "predict.txt")
+
+        with open(predict_file_path, "w") as file:
+            for track in tracks:
+                track_id = track["track_id"]
+                spatial = track["spatial"]
+
+                for idx, box in enumerate(spatial):
+                    if box is not None:
+                        x, y, w, h = box
+                        frame_id = idx + 1  # Index starts at 1
+                        file.write(f"{frame_id}, {track_id}, {x}, {y}, {w}, {h}, 1, 1, 1\n")
+
+'''
+{
+  "qid": 2579,
+  "query": "A girl and her mother cooked while talking with each other on facetime.",
+  "vid": "NUsG9BgSes0_210.0_360.0",
+  "track_id": 1
+  "pred_relevant_windows": [
+    [0, 70, 0.9986],
+    [78, 146, 0.4138],
+    [0, 146, 0.0444],
+    ...
+  ]
+}
+'''
+def process_temporal_predictions(submission_file_path, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "ovis_valid_preds.jsonl")
+
+    with open(submission_file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    with open(output_path, "w", encoding="utf-8") as file:
+        for query in data["queries"]:
+            qid = query["query_id"]
+            query_text = query["query"]
+            duration = query["video_length"]
+            video_name = query["video_name"]
+            vid = f"{video_name}_1.0_{duration}.0"
+
+            for track in query["tracks"]:
+                track_id = track["track_id"]
+                pred_relevant_windows = track["temporal"]
+
+                json_line = {
+                    "qid": qid,
+                    "query": query_text,
+                    "vid": vid,
+                    "track_id": track_id,
+                    "pred_relevant_windows": pred_relevant_windows
+                }
+
+                file.write(json.dumps(json_line) + "\n")
+

@@ -1,11 +1,15 @@
 # Usage: bash temporal_eval/eval.sh
 cd "$(dirname "$0")"
 
-submission_path=sample_val_preds_no_saliency_scores.jsonl
-gt_path=../data/ovis_val_release.jsonl
-save_path=sample_val_preds_metrics.json
+SUBMISSION_PATH="$1"
+GT_PATH="$2"
+SAVE_PATH="$3"
+
+echo "SUBMISSION_PATH: $SUBMISSION_PATH"
+echo "GT_PATH: $GT_PATH"
+echo "SAVE_PATH: $SAVE_PATH"
 
 python3 eval.py \
---submission_path ${submission_path} \
---gt_path ${gt_path} \
---save_path ${save_path}
+--submission_path "$SUBMISSION_PATH" \
+--gt_path "$GT_PATH" \
+--save_path "$SAVE_PATH"

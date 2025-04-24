@@ -20,7 +20,7 @@ def compute_average_precision_detection_wrapper(
     return qid, scores
 
 
-def compute_mr_ap(submission, ground_truth, iou_thds=np.linspace(0.5, 0.95, 10),
+def compute_mr_ap(submission, ground_truth, iou_thds=np.linspace(0.1, 0.95, 18),
                   max_gt_windows=None, max_pred_windows=10, num_workers=8, chunksize=50):
     iou_thds = [float(f"{e:.2f}") for e in iou_thds]
     pred_qid2data = defaultdict(list)
@@ -73,7 +73,7 @@ def compute_mr_ap(submission, ground_truth, iou_thds=np.linspace(0.5, 0.95, 10),
     return iou_thd2ap
 
 
-def compute_mr_r1(submission, ground_truth, iou_thds=np.linspace(0.3, 0.95, 14)):
+def compute_mr_r1(submission, ground_truth, iou_thds=np.linspace(0.1, 0.95, 18)):
     """If a predicted segment has IoU >= iou_thd with one of the 1st GT segment, we define it positive"""
     iou_thds = [float(f"{e:.2f}") for e in iou_thds]
     pred_qid2window = {d["qid"]: d["pred_relevant_windows"][0][:2] for d in submission}  # :2 rm scores
@@ -100,6 +100,78 @@ def compute_mr_r1(submission, ground_truth, iou_thds=np.linspace(0.3, 0.95, 14))
         iou_thd2recall_at_one[str(thd)] = float(f"{np.mean(pred_gt_iou >= thd) * 100:.2f}")
     return iou_thd2recall_at_one, miou_at_one
 
+# https://github.com/showlab/UniVTG/blob/32659ac7aeba21742a63274f30eba785fc57e247/eval/eval.py
+def compute_mr_r5(submission, ground_truth, iou_thds=np.linspace(0.1, 0.95, 18)):
+    """If a predicted segment has IoU >= iou_thd with one of the 1st GT segment, we define it positive"""
+    iou_thds = [float(f"{e:.2f}") for e in iou_thds]
+    pred_qid2window = {d["qid"]: [x[:2] for x in d["pred_relevant_windows"][:5]] for d in submission}
+    gt_qid2window = {}
+    pred_optimal_qid2window = {}
+    for d in ground_truth:
+        cur_gt_windows = d["relevant_windows"]
+        cur_qid = d["qid"]
+        cur_max_iou_pred = 0
+        cur_max_iou_gt = 0
+        # cur_max_iou_idx = 0
+        if len(cur_gt_windows) > 0:
+            try:
+                cur_ious = compute_temporal_iou_batch_cross(
+                    np.array(pred_qid2window[cur_qid]), np.array(d["relevant_windows"])
+                )[0]
+                # replace all NaN to 0
+                cur_ious[np.isnan(cur_ious)] = 0
+                cur_max_iou_pred, cur_max_iou_gt = np.where(cur_ious == np.max(cur_ious))
+                cur_max_iou_pred, cur_max_iou_gt = cur_max_iou_pred[0], cur_max_iou_gt[0]
+            except:
+                print(f"error happen when `cur_ious' equal to {cur_ious}")
+        pred_optimal_qid2window[cur_qid] = pred_qid2window[cur_qid][cur_max_iou_pred]
+        gt_qid2window[cur_qid] = cur_gt_windows[cur_max_iou_gt]
+
+    qids = list(pred_qid2window.keys())
+    pred_windows = np.array([pred_optimal_qid2window[k] for k in qids]).astype(float)
+    gt_windows = np.array([gt_qid2window[k] for k in qids]).astype(float)
+    pred_gt_iou = compute_temporal_iou_batch_paired(pred_windows, gt_windows)
+    iou_thd2recall_at_five = {}
+    miou_at_five = float(f"{np.mean(pred_gt_iou) * 100:.2f}")
+    for thd in iou_thds:
+        iou_thd2recall_at_five[str(thd)] = float(f"{np.mean(pred_gt_iou >= thd) * 100:.2f}")
+    return iou_thd2recall_at_five, miou_at_five
+
+def compute_mr_r10(submission, ground_truth, iou_thds=np.linspace(0.1, 0.95, 18)):
+    """If a predicted segment has IoU >= iou_thd with one of the 1st GT segment, we define it positive"""
+    iou_thds = [float(f"{e:.2f}") for e in iou_thds]
+    pred_qid2window = {d["qid"]: [x[:2] for x in d["pred_relevant_windows"][:10]] for d in submission}
+    gt_qid2window = {}
+    pred_optimal_qid2window = {}
+    for d in ground_truth:
+        cur_gt_windows = d["relevant_windows"]
+        cur_qid = d["qid"]
+        cur_max_iou_pred = 0
+        cur_max_iou_gt = 0
+        # cur_max_iou_idx = 0
+        if len(cur_gt_windows) > 0:
+            try:
+                cur_ious = compute_temporal_iou_batch_cross(
+                    np.array(pred_qid2window[cur_qid]), np.array(d["relevant_windows"])
+                )[0]
+                # replace all NaN to 0
+                cur_ious[np.isnan(cur_ious)] = 0
+                cur_max_iou_pred, cur_max_iou_gt = np.where(cur_ious == np.max(cur_ious))
+                cur_max_iou_pred, cur_max_iou_gt = cur_max_iou_pred[0], cur_max_iou_gt[0]
+            except:
+                print(f"error happen when `cur_ious' equal to {cur_ious}")
+        pred_optimal_qid2window[cur_qid] = pred_qid2window[cur_qid][cur_max_iou_pred]
+        gt_qid2window[cur_qid] = cur_gt_windows[cur_max_iou_gt]
+
+    qids = list(pred_qid2window.keys())
+    pred_windows = np.array([pred_optimal_qid2window[k] for k in qids]).astype(float)
+    gt_windows = np.array([gt_qid2window[k] for k in qids]).astype(float)
+    pred_gt_iou = compute_temporal_iou_batch_paired(pred_windows, gt_windows)
+    iou_thd2recall_at_ten = {}
+    miou_at_ten = float(f"{np.mean(pred_gt_iou) * 100:.2f}")
+    for thd in iou_thds:
+        iou_thd2recall_at_ten[str(thd)] = float(f"{np.mean(pred_gt_iou >= thd) * 100:.2f}")
+    return iou_thd2recall_at_ten, miou_at_ten
 
 def get_window_len(window):
     return window[1] - window[0]
@@ -156,9 +228,13 @@ def eval_moment_retrieval(submission, ground_truth, verbose=True):
     else:
         iou_thd2average_precision = compute_mr_ap(submission, ground_truth, num_workers=8, chunksize=50)
         iou_thd2recall_at_one, miou_at_one = compute_mr_r1(submission, ground_truth)
+        iou_thd2recall_at_five, miou_at_five = compute_mr_r5(submission, ground_truth)
+        iou_thd2recall_at_ten, miou_at_ten = compute_mr_r10(submission, ground_truth)
         ret_metrics['full'] = {"MR-mIoU": miou_at_one,
-                                "MR-mAP": iou_thd2average_precision,
-                                "MR-R1": iou_thd2recall_at_one}
+                               "MR-mAP": iou_thd2average_precision,
+                               "MR-R1": iou_thd2recall_at_one,
+                               "MR-R5": iou_thd2recall_at_five,
+                               "MR-R10": iou_thd2recall_at_ten}
 
         # iou_thd2average_precision = compute_mr_ap(_submission, _ground_truth, num_workers=8, chunksize=50)
         # iou_thd2recall_at_one = compute_mr_r1(_submission, _ground_truth)
@@ -309,12 +385,23 @@ def eval_submission(submission, ground_truth, verbose=True, match_number=False):
         eval_metrics.update(moment_ret_scores)
         moment_ret_scores_brief = {
             "MR-full-mAP": moment_ret_scores["full"]["MR-mAP"]["average"],
+            "MR-full-mAP@0.1": moment_ret_scores["full"]["MR-mAP"]["0.1"],
+            "MR-full-mAP@0.3": moment_ret_scores["full"]["MR-mAP"]["0.3"],
             "MR-full-mAP@0.5": moment_ret_scores["full"]["MR-mAP"]["0.5"],
-            "MR-full-mAP@0.75": moment_ret_scores["full"]["MR-mAP"]["0.75"],
+            "MR-full-mAP@0.7": moment_ret_scores["full"]["MR-mAP"]["0.7"],
             "MR-full-mIoU": moment_ret_scores["full"]["MR-mIoU"],
+            "MR-full-R1@0.1": moment_ret_scores["full"]["MR-R1"]["0.1"],
             "MR-full-R1@0.3": moment_ret_scores["full"]["MR-R1"]["0.3"],
             "MR-full-R1@0.5": moment_ret_scores["full"]["MR-R1"]["0.5"],
             "MR-full-R1@0.7": moment_ret_scores["full"]["MR-R1"]["0.7"],
+            "MR-full-R5@0.1": moment_ret_scores["full"]["MR-R5"]["0.1"],
+            "MR-full-R5@0.3": moment_ret_scores["full"]["MR-R5"]["0.3"],
+            "MR-full-R5@0.5": moment_ret_scores["full"]["MR-R5"]["0.5"],
+            "MR-full-R5@0.7": moment_ret_scores["full"]["MR-R5"]["0.7"],
+            "MR-full-R10@0.1": moment_ret_scores["full"]["MR-R10"]["0.1"],
+            "MR-full-R10@0.3": moment_ret_scores["full"]["MR-R10"]["0.3"],
+            "MR-full-R10@0.5": moment_ret_scores["full"]["MR-R10"]["0.5"],
+            "MR-full-R10@0.7": moment_ret_scores["full"]["MR-R10"]["0.7"],
         }
         eval_metrics_brief.update(
             sorted([(k, v) for k, v in moment_ret_scores_brief.items()], key=lambda x: x[0]))
