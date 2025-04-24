@@ -128,12 +128,5 @@ imExt=.png
 
             with open(seqinfo_path, "w", encoding='utf-8') as seq_file:
                 seq_file.write(seqinfo_content)
-            # print(f"Created: {seqinfo_path}")
             count = count + 1
     print(f"Created {count} sequences")
-
-process_spatial_ground_truth("/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_valid_ground_truth.json")
-process_temporal_ground_truth("/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_valid_ground_truth.json")
-json_path = "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/video_info_valid.json"
-folder_path = "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_gt/spatial/valid"
-create_seqinfo(json_path, folder_path)

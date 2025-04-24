@@ -13,10 +13,10 @@ SAVE_PATH="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_prediction/temp
 while [[ "$#" -gt 0 ]]; do
     case $1 in
 #        --SEQMAP_FILE) SEQMAP_FILE="$2"; shift ;;
+        --input_file) INPUT_FILE="$2"; shift ;;
         --GT_FOLDER) GT_FOLDER="$2"; shift ;;
         --TRACKERS_FOLDER) TRACKERS_FOLDER="$2"; shift ;;
         --TRACKERS_TO_EVAL) TRACKERS_TO_EVAL="$2"; shift ;;
-        --input_file) INPUT_FILE="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
