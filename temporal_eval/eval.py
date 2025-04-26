@@ -338,13 +338,14 @@ def eval_highlight(submission, ground_truth, verbose=True):
     return highlight_det_metrics
 
 
-def eval_submission(submission, ground_truth, verbose=True, match_number=False):
+def eval_submission(args, submission, ground_truth, verbose=True, match_number=False):
     """
     Args:
         submission: list(dict), each dict is {
             qid: str,
             query: str,
             vid: str,
+            track_id: str,
             pred_relevant_windows: list([st, ed]),
             pred_saliency_scores: list(float), len == #clips in video.
                 i.e., each clip in the video will have a saliency score.
@@ -354,6 +355,8 @@ def eval_submission(submission, ground_truth, verbose=True, match_number=False):
           "query": "Man in gray top walks from outside to inside.",
           "duration": 150,
           "vid": "RoripwjYFp8_360.0_510.0",
+          "track_id": 1,
+          "relevant_windows": [[26, 46]],
           "relevant_clip_ids": [13, 14, 15, 16, 17]
           "saliency_scores": [[4, 4, 2], [3, 4, 2], [2, 2, 3], [2, 2, 2], [0, 1, 3]]
                each sublist corresponds to one clip in relevant_clip_ids.
@@ -376,12 +379,70 @@ def eval_submission(submission, ground_truth, verbose=True, match_number=False):
         shared_qids = pred_qids.intersection(gt_qids)
         submission = [e for e in submission if e["qid"] in shared_qids]
         ground_truth = [e for e in ground_truth if e["qid"] in shared_qids]
+    print(f"First matching is done! {len(ground_truth)} ground truth entries have been saved. {len(submission)} submissions have been saved")
+
+    # filtered based on id mapping
+    id_mapping = {}
+    with open(args.id_mapping_path, 'r') as f:
+        for line in f:
+            data = json.loads(line)
+            seq = data['seq']
+            id_mapping[seq] = data
+
+    submission_dict = defaultdict(list)
+    for e in submission:
+        submission_dict[e['qid']].append(e)
+    submission_filtered = []
+
+    for gt in ground_truth:
+        qid = gt['qid']
+        query = gt['query']
+        vid = gt['vid']
+        track_id = gt['track_id']
+        submissions = submission_dict.get(qid, [])
+
+        # generate seq
+        vid_prefix = vid.split('_')[0]
+        query_formatted = '-'.join(query.lower().split())
+        seq = f"{vid_prefix}+{query_formatted}"
+
+        mapping = id_mapping.get(seq)
+        if mapping is None:
+            continue
+
+        unique_gt_ids = mapping['unique_gt_ids']
+        unique_tracker_ids = mapping['unique_tracker_ids']
+
+        if track_id not in unique_gt_ids:
+            continue
+        idx_in_gt = unique_gt_ids.index(track_id)
+        # make sure in the range
+        if idx_in_gt < len(unique_tracker_ids):
+            tracker_id_pred = unique_tracker_ids[idx_in_gt]
+            for subm in submissions:
+                if subm['track_id'] == tracker_id_pred:
+                    submission_filtered.append(subm)
+
+    print(f"Filter id is done! {len(submission_filtered)} submissions that meet the ID mapping have been saved.")
+
+    # match again between ground truth and submission_filtered
+    pred_qids = set([e["qid"] for e in submission_filtered])
+    gt_qids = set([e["qid"] for e in ground_truth])
+    if match_number:
+        assert pred_qids == gt_qids, \
+            f"qids in ground_truth and submission must match. " \
+            f"use `match_number=False` if you wish to disable this check"
+    else:  # only leave the items that exists in both submission and ground_truth
+        shared_qids = pred_qids.intersection(gt_qids)
+        submission_filtered = [e for e in submission_filtered if e["qid"] in shared_qids]
+        ground_truth = [e for e in ground_truth if e["qid"] in shared_qids]
+    print(f"Second matching is done! {len(ground_truth)} ground truth entries have been saved.")
 
     eval_metrics = {}
     eval_metrics_brief = OrderedDict()
-    if "pred_relevant_windows" in submission[0]:
+    if "pred_relevant_windows" in submission_filtered[0]:
         moment_ret_scores = eval_moment_retrieval(
-            submission, ground_truth, verbose=verbose)
+            submission_filtered, ground_truth, verbose=verbose)
         eval_metrics.update(moment_ret_scores)
         moment_ret_scores_brief = {
             "MR-full-mAP": moment_ret_scores["full"]["MR-mAP"]["average"],
@@ -406,10 +467,10 @@ def eval_submission(submission, ground_truth, verbose=True, match_number=False):
         eval_metrics_brief.update(
             sorted([(k, v) for k, v in moment_ret_scores_brief.items()], key=lambda x: x[0]))
 
-    if "pred_saliency_scores" in submission[0]:
-        print(f'submission[0]: {submission[0]}')
+    if "pred_saliency_scores" in submission_filtered[0]:
+        print(f'submission[0]: {submission_filtered[0]}')
         highlight_det_scores = eval_highlight(
-            submission, ground_truth, verbose=verbose)
+            submission_filtered, ground_truth, verbose=verbose)
         eval_metrics.update(highlight_det_scores)
         highlight_det_scores_brief = dict([
             (f"{k}-{sub_k.split('-')[1]}", v[sub_k])
@@ -430,12 +491,14 @@ def eval_main():
     parser.add_argument("--gt_path", type=str, help="path to GT file")
     parser.add_argument("--save_path", type=str, help="path to save the results")
     parser.add_argument("--not_verbose", action="store_true")
+    parser.add_argument("--id_mapping_path", type=str, default='../results/id_mapping.jsonl',
+                        help="path to id mapping file generated from MOT gt-prediction id matching, equals to SAVE_PATH defined in trackeval/eval")
     args = parser.parse_args()
 
     verbose = not args.not_verbose
     submission = load_jsonl(args.submission_path)
     gt = load_jsonl(args.gt_path)
-    results = eval_submission(submission, gt, verbose=verbose)
+    results = eval_submission(args, submission, gt, verbose=verbose)
     if verbose:
         print(json.dumps(results, indent=4))
 
