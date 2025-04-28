@@ -338,6 +338,131 @@ def eval_highlight(submission, ground_truth, verbose=True):
     return highlight_det_metrics
 
 
+def filter_submission_by_gt(submission, ground_truth, id_mapping_path, verbose=True):
+    """
+    Filter submission based on ground_truth and id_mapping.jsonl.
+    """
+    id_mapping = {}
+    with open(id_mapping_path, 'r') as f:
+        for line in f:
+            item = json.loads(line)
+            id_mapping[item["seq"]] = item
+
+    submission_updated = []
+
+    for gt in ground_truth:
+        query = gt["query"].lower().replace(" ", "-")
+        vid = gt["vid"].split("_")[0]
+        seq_gt = f"{vid}+{query}"
+
+        if seq_gt not in id_mapping:
+            if verbose:
+                print(f"Warning: {seq_gt} not found in id_mapping.jsonl, no matching results between gt and prediction.")
+            continue
+
+        id_info = id_mapping[seq_gt]
+        unique_gt_ids = id_info["unique_gt_ids"]
+        unique_tracker_ids = id_info["unique_tracker_ids"]
+        alpha_match_rows_list = id_info["alpha_match_rows_list"]
+        gt_ids_t_list = id_info["gt_ids_t_list"]
+        tracker_ids_t_list = id_info["tracker_ids_t_list"]
+        alpha_row_col_matches = id_info["alpha_row_col_matches"]
+
+        track_id = gt["track_id"]
+
+        # Step 1: Find the index of track_id in unique_gt_ids
+        if track_id not in unique_gt_ids:
+            if verbose:
+                print(f"Warning: track_id {track_id} not found in unique_gt_ids for seq {seq_gt}")
+            continue
+        idx_gt = unique_gt_ids.index(track_id)
+
+        # Step 2: Traverse gt_ids_t_list and find the item containing idx_gt
+        gt_ids_t_list_of_idx_gt = []
+        for t, gt_ids_t in gt_ids_t_list:
+            if idx_gt in gt_ids_t:
+                gt_ids_t_list_of_idx_gt.append((t, gt_ids_t))
+
+        # Step 3: Reverse key lookup
+        keys = set()
+        for t, gt_ids_t in gt_ids_t_list_of_idx_gt:
+            for k, v in enumerate(gt_ids_t):
+                if v == idx_gt:
+                    keys.add(k)
+
+        if len(keys) == 0:
+            if verbose:
+                 print(f"Warning: no matching key found for seq {seq_gt}, skipping this item.")
+            continue
+        elif len(keys) != 1:
+            if verbose:
+                print(f"Warning: keys length != 1 for seq {seq_gt}, keys = {keys}")
+        key = next(iter(keys))
+
+        # Step 4: Filter alpha_match_rows_list according to gt_ids_t_list_of_idx_gt
+        valid_ts = [t for t, _ in gt_ids_t_list_of_idx_gt]
+        alpha_match_rows_list_gt = []
+        for t, row_ids in alpha_match_rows_list:
+            if t in valid_ts and key in row_ids:
+                alpha_match_rows_list_gt.append((t, row_ids))
+
+        # Step 5: Handle alpha_row_col_matches
+        cols_matches = []
+        for t, row_id, col_id in alpha_row_col_matches:
+            match_row_ids = [row for t_gt, rows in alpha_match_rows_list_gt if t_gt == t for row in rows]
+            if t in valid_ts and row_id in match_row_ids:
+                cols_matches.append([t, col_id])
+
+        # Step 6: Traverse tracker_ids_t_list and find the entry of t in cols_matches
+        tracker_ids_t_list_subset = []
+        t_in_cols = [t for t, _ in cols_matches]
+        for t, tracker_ids in tracker_ids_t_list:
+            if t in t_in_cols:
+                tracker_ids_t_list_subset.append((t, tracker_ids))
+
+        # Step 7: Get tracker_ids from tracker_ids_t_list_subset
+        tracker_ids_indices = set()
+        for t, tracker_ids in tracker_ids_t_list_subset:
+            for t_c, col_id in cols_matches:
+                if t == t_c:
+                    tracker_ids_indices.add(tracker_ids[col_id])
+
+        if len(tracker_ids_indices) == 0:
+            if verbose:
+                print(f"Warning: no matching key found in the tracker {tracker_ids_indices} for seq {seq_gt}, skipping this item.")
+            continue
+        elif len(tracker_ids_indices) != 1:
+            if verbose:
+                print(f"Warning: tracker_ids length != 1 for seq {seq_gt}, tracker_ids = {tracker_ids_indices}")
+
+        tracker_ids_index = next(iter(tracker_ids_indices))
+
+        # Step 8: Use tracker_ids_index to get tracker_id in unique_tracker_ids
+        if tracker_ids_index >= len(unique_tracker_ids):
+            if verbose:
+                print(f"Error: tracker_ids_index {tracker_ids_index} out of bounds for unique_tracker_ids for seq {seq_gt}")
+            continue
+        tracker_id = unique_tracker_ids[tracker_ids_index]
+
+        # Step 9: Find a matching item in submission based on seq and tracker_id
+        matched = None
+        for s in submission:
+            s_query = s["query"].lower().replace(" ", "-")
+            s_vid = s["vid"].split("_")[0]
+            s_seq = f"{s_vid}+{s_query}"
+
+            if s_seq == seq_gt and s["track_id"] == tracker_id:
+                matched = s
+                break
+
+        if matched:
+            submission_updated.append(matched)
+        else:
+            if verbose:
+                print(f"Warning: No matching submission found for seq {seq_gt} with tracker_id {tracker_id}")
+
+    return submission_updated
+
 def eval_submission(args, submission, ground_truth, verbose=True, match_number=False):
     """
     Args:
@@ -379,54 +504,15 @@ def eval_submission(args, submission, ground_truth, verbose=True, match_number=F
         shared_qids = pred_qids.intersection(gt_qids)
         submission = [e for e in submission if e["qid"] in shared_qids]
         ground_truth = [e for e in ground_truth if e["qid"] in shared_qids]
-    print(f"First matching is done! {len(ground_truth)} ground truth entries have been saved. {len(submission)} submissions have been saved")
+    first_matching_ground_truth_length = len(ground_truth)
+    first_matching_submission_length = len(submission)
+    print(f"First matching is done! {first_matching_ground_truth_length} ground truth entries have been saved. {first_matching_submission_length} submissions have been saved")
 
-    # filtered based on id mapping
-    id_mapping = {}
-    with open(args.id_mapping_path, 'r') as f:
-        for line in f:
-            data = json.loads(line)
-            seq = data['seq']
-            id_mapping[seq] = data
-
-    submission_dict = defaultdict(list)
-    for e in submission:
-        submission_dict[e['qid']].append(e)
-    submission_filtered = []
-
-    for gt in ground_truth:
-        qid = gt['qid']
-        query = gt['query']
-        vid = gt['vid']
-        track_id = gt['track_id']
-        submissions = submission_dict.get(qid, [])
-
-        # generate seq
-        vid_prefix = vid.split('_')[0]
-        query_formatted = '-'.join(query.lower().split())
-        seq = f"{vid_prefix}+{query_formatted}"
-
-        mapping = id_mapping.get(seq)
-        if mapping is None:
-            continue
-
-        unique_gt_ids = mapping['unique_gt_ids']
-        unique_tracker_ids = mapping['unique_tracker_ids']
-
-        if track_id not in unique_gt_ids:
-            continue
-        idx_in_gt = unique_gt_ids.index(track_id)
-        # make sure in the range
-        if idx_in_gt < len(unique_tracker_ids):
-            tracker_id_pred = unique_tracker_ids[idx_in_gt]
-            for subm in submissions:
-                if subm['track_id'] == tracker_id_pred:
-                    submission_filtered.append(subm)
-
-    print(f"Filter id is done! {len(submission_filtered)} submissions that meet the ID mapping have been saved.")
+    submission = filter_submission_by_gt(submission, ground_truth, id_mapping_path=args.id_mapping_path, verbose=True)
+    print(f"ID matching is done! {len(ground_truth)} ground truth entries have been saved. {len(submission)} submissions have been saved")
 
     # match again between ground truth and submission_filtered
-    pred_qids = set([e["qid"] for e in submission_filtered])
+    pred_qids = set([e["qid"] for e in submission])
     gt_qids = set([e["qid"] for e in ground_truth])
     if match_number:
         assert pred_qids == gt_qids, \
@@ -434,15 +520,19 @@ def eval_submission(args, submission, ground_truth, verbose=True, match_number=F
             f"use `match_number=False` if you wish to disable this check"
     else:  # only leave the items that exists in both submission and ground_truth
         shared_qids = pred_qids.intersection(gt_qids)
-        submission_filtered = [e for e in submission_filtered if e["qid"] in shared_qids]
+        submission = [e for e in submission if e["qid"] in shared_qids]
         ground_truth = [e for e in ground_truth if e["qid"] in shared_qids]
-    print(f"Second matching is done! {len(ground_truth)} ground truth entries have been saved.")
+    second_matching_ground_truth_length = len(ground_truth)
+    second_matching_submission_length = len(submission)
+    print(f"Second matching is done! {second_matching_ground_truth_length} ground truth entries have been saved. {second_matching_submission_length} submissions have been saved")
+    print(f"In the end, {second_matching_ground_truth_length} / {first_matching_ground_truth_length} = {second_matching_ground_truth_length/first_matching_ground_truth_length:.2%} ground truth entries have been saved. "
+          f"{second_matching_submission_length} / {first_matching_submission_length} = {second_matching_submission_length/first_matching_submission_length:.2%} submissions have been saved")
 
     eval_metrics = {}
     eval_metrics_brief = OrderedDict()
-    if "pred_relevant_windows" in submission_filtered[0]:
+    if "pred_relevant_windows" in submission[0]:
         moment_ret_scores = eval_moment_retrieval(
-            submission_filtered, ground_truth, verbose=verbose)
+            submission, ground_truth, verbose=verbose)
         eval_metrics.update(moment_ret_scores)
         moment_ret_scores_brief = {
             "MR-full-mAP": moment_ret_scores["full"]["MR-mAP"]["average"],
@@ -467,10 +557,10 @@ def eval_submission(args, submission, ground_truth, verbose=True, match_number=F
         eval_metrics_brief.update(
             sorted([(k, v) for k, v in moment_ret_scores_brief.items()], key=lambda x: x[0]))
 
-    if "pred_saliency_scores" in submission_filtered[0]:
-        print(f'submission[0]: {submission_filtered[0]}')
+    if "pred_saliency_scores" in submission[0]:
+        print(f'submission[0]: {submission[0]}')
         highlight_det_scores = eval_highlight(
-            submission_filtered, ground_truth, verbose=verbose)
+            submission, ground_truth, verbose=verbose)
         eval_metrics.update(highlight_det_scores)
         highlight_det_scores_brief = dict([
             (f"{k}-{sub_k.split('-')[1]}", v[sub_k])
@@ -496,6 +586,24 @@ def eval_main():
     args = parser.parse_args()
 
     verbose = not args.not_verbose
+
+    file_path = args.id_mapping_path
+    #
+    # if os.path.exists(args.id_mapping_path):
+    #     os.remove(file_path)
+    #     print(f"Deleted file: {file_path}")
+    # else:
+    #     print(f"File does not exist: {file_path}")
+
+    # # 先判断路径的目录存在
+    # dir_path = os.path.dirname(file_path)
+    # if not os.path.exists(dir_path):
+    #     os.makedirs(dir_path, exist_ok=True)
+    #
+    # # 然后再看文件是否存在，存在就删除
+    # if os.path.isfile(file_path):
+    #     os.remove(file_path)
+
     submission = load_jsonl(args.submission_path)
     gt = load_jsonl(args.gt_path)
     results = eval_submission(args, submission, gt, verbose=verbose)

@@ -63,6 +63,8 @@ if __name__ == '__main__':
                         default='/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_gt/spatial/valid', help='Path to gt spatial output directory')
     parser.add_argument('--temporal_output_dir', type=str,
                         default='/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_gt/temporal', help='Path to gt temporal output directory')
+    parser.add_argument("--id_mapping_path", type=str, default='../results/id_mapping.jsonl',
+                        help="path to id mapping file generated from MOT gt-prediction id matching, equals to SAVE_PATH defined in trackeval/eval")
 
     args = parser.parse_args()
 
@@ -74,3 +76,10 @@ if __name__ == '__main__':
         prepare_ground_truth_if_needed(args.ovis_gt_file, args.spatial_output_base, args.temporal_output_dir)
         process_spatial_predictions(args.input_file, args.convert_results_in_spatial_dir)
         process_temporal_predictions(args.input_file, args.convert_results_in_temporal_dir)
+
+        file_path = args.id_mapping_path
+        if os.path.exists(args.id_mapping_path):
+            os.remove(file_path)
+            print(f"Deleted file: {file_path}")
+        else:
+            print(f"File does not exist: {file_path}")
