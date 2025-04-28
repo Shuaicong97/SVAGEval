@@ -373,7 +373,7 @@ def filter_submission_by_gt(submission, ground_truth, id_mapping_path, verbose=T
         # Step 1: Find the index of track_id in unique_gt_ids
         if track_id not in unique_gt_ids:
             if verbose:
-                print(f"Warning: track_id {track_id} not found in unique_gt_ids for seq {seq_gt}")
+                print(f"Warning: track_id {track_id} not found in unique_gt_ids for seq {seq_gt}. unique_gt_ids: {unique_gt_ids}")
             continue
         idx_gt = unique_gt_ids.index(track_id)
 
@@ -392,7 +392,7 @@ def filter_submission_by_gt(submission, ground_truth, id_mapping_path, verbose=T
 
         if len(keys) == 0:
             if verbose:
-                 print(f"Warning: no matching key found for seq {seq_gt}, skipping this item.")
+                 print(f"Warning: no matching key found for seq {seq_gt}, skipping this item. gt_ids_t_list_of_idx_gt: {gt_ids_t_list_of_idx_gt}")
             continue
         elif len(keys) != 1:
             if verbose:
@@ -429,10 +429,13 @@ def filter_submission_by_gt(submission, ground_truth, id_mapping_path, verbose=T
 
         if len(tracker_ids_indices) == 0:
             if verbose:
-                print(f"Warning: no matching key found in the tracker {tracker_ids_indices} for seq {seq_gt}, skipping this item.")
+                # no id mapping matches between gt and prediction
+                print(f"Warning: no matching key found in the tracker for seq {seq_gt}, skipping this item.")
             continue
         elif len(tracker_ids_indices) != 1:
             if verbose:
+                # for id in gt, there are more than 1 matched track_id in prediction
+                # in this case, we also choose the first one as tracker_ids_index
                 print(f"Warning: tracker_ids length != 1 for seq {seq_gt}, tracker_ids = {tracker_ids_indices}")
 
         tracker_ids_index = next(iter(tracker_ids_indices))
@@ -508,7 +511,7 @@ def eval_submission(args, submission, ground_truth, verbose=True, match_number=F
     first_matching_submission_length = len(submission)
     print(f"First matching is done! {first_matching_ground_truth_length} ground truth entries have been saved. {first_matching_submission_length} submissions have been saved")
 
-    submission = filter_submission_by_gt(submission, ground_truth, id_mapping_path=args.id_mapping_path, verbose=True)
+    submission = filter_submission_by_gt(submission, ground_truth, id_mapping_path=args.id_mapping_path, verbose=False)
     print(f"ID matching is done! {len(ground_truth)} ground truth entries have been saved. {len(submission)} submissions have been saved")
 
     # match again between ground truth and submission_filtered
