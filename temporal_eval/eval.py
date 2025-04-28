@@ -337,7 +337,7 @@ def eval_highlight(submission, ground_truth, verbose=True):
             print(f"Time cost {time.time() - start_time:.2f} seconds")
     return highlight_det_metrics
 
-
+# Option 1: use the first index of tracker_ids_indices as the mapping track_id index
 def filter_submission_by_gt(submission, ground_truth, id_mapping_path, verbose=True):
     """
     Filter submission based on ground_truth and id_mapping.jsonl.
@@ -373,6 +373,7 @@ def filter_submission_by_gt(submission, ground_truth, id_mapping_path, verbose=T
         # Step 1: Find the index of track_id in unique_gt_ids
         if track_id not in unique_gt_ids:
             if verbose:
+                # GT does not have box information for this track_id in its time range
                 print(f"Warning: track_id {track_id} not found in unique_gt_ids for seq {seq_gt}. unique_gt_ids: {unique_gt_ids}")
             continue
         idx_gt = unique_gt_ids.index(track_id)
@@ -466,6 +467,143 @@ def filter_submission_by_gt(submission, ground_truth, id_mapping_path, verbose=T
 
     return submission_updated
 
+# Option 2: use the count of each index, choose the highest as the mapping track_id index
+def filter_submission_by_count(submission, ground_truth, id_mapping_path, verbose=True):
+    """
+    Filter submission based on ground_truth and id_mapping.jsonl.
+    """
+    id_mapping = {}
+    with open(id_mapping_path, 'r') as f:
+        for line in f:
+            item = json.loads(line)
+            id_mapping[item["seq"]] = item
+
+    submission_updated = []
+
+    for gt in ground_truth:
+        query = gt["query"].lower().replace(" ", "-")
+        vid = gt["vid"].split("_")[0]
+        seq_gt = f"{vid}+{query}"
+
+        if seq_gt not in id_mapping:
+            if verbose:
+                print(f"Warning: {seq_gt} not found in id_mapping.jsonl, no matching results between gt and prediction.")
+            continue
+
+        id_info = id_mapping[seq_gt]
+        unique_gt_ids = id_info["unique_gt_ids"]
+        unique_tracker_ids = id_info["unique_tracker_ids"]
+        alpha_match_rows_list = id_info["alpha_match_rows_list"]
+        alpha_match_cols_list = id_info["alpha_match_cols_list"]
+        gt_ids_t_list = id_info["gt_ids_t_list"]
+        tracker_ids_t_list = id_info["tracker_ids_t_list"]
+        alpha_row_col_matches = id_info["alpha_row_col_matches"]
+
+        track_id = gt["track_id"]
+
+        # Step 1: Find the index of track_id in unique_gt_ids
+        if track_id not in unique_gt_ids:
+            if verbose:
+                # GT does not have box information for this track_id in its time range
+                print(f"Warning: track_id {track_id} not found in unique_gt_ids for seq {seq_gt}. unique_gt_ids: {unique_gt_ids}")
+            continue
+        idx_gt = unique_gt_ids.index(track_id)
+
+        # Step 2: Traverse gt_ids_t_list and find the item containing idx_gt
+        gt_ids_t_list_of_idx_gt = []
+        for t, gt_ids_t in gt_ids_t_list:
+            if idx_gt in gt_ids_t:
+                gt_ids_t_list_of_idx_gt.append((t, gt_ids_t))
+
+        # Step 3: Reverse key lookup
+        keys = set()
+        for t, gt_ids_t in gt_ids_t_list_of_idx_gt:
+            for k, v in enumerate(gt_ids_t):
+                if v == idx_gt:
+                    keys.add(k)
+
+        if len(keys) == 0:
+            if verbose:
+                 print(f"Warning: no matching key found for seq {seq_gt}, skipping this item. gt_ids_t_list_of_idx_gt: {gt_ids_t_list_of_idx_gt}")
+            continue
+        elif len(keys) != 1:
+            if verbose:
+                print(f"Warning: keys length != 1 for seq {seq_gt}, keys = {keys}")
+        key = next(iter(keys))
+
+        # Step 4: Filter alpha_match_rows_list according to gt_ids_t_list_of_idx_gt
+        valid_ts = [t for t, _ in gt_ids_t_list_of_idx_gt]
+        alpha_match_rows_list_gt = []
+        for t, row_ids in alpha_match_rows_list:
+            if t in valid_ts and key in row_ids:
+                alpha_match_rows_list_gt.append((t, row_ids))
+
+        # Step 5: Select the item in alpha_match_cols_list that corresponds to alpha_match_rows_list_gt
+        alpha_match_cols_list_gt = []
+        for t, cols in alpha_match_cols_list:
+            if any(t == t_gt for t_gt, _ in alpha_match_rows_list_gt):
+                alpha_match_cols_list_gt.append((t, cols))
+                if len(cols) > 1 and verbose:
+                    print(f"Warning: multiple cols matched in alpha_match_cols_list for t={t}, cols={cols}")
+
+        if not alpha_match_cols_list_gt:
+            if verbose:
+                print(f"Warning: No alpha_match_cols_list entry matched for seq {seq_gt}")
+            continue
+
+        # Step 6: According to alpha_match_cols_list_gt, count the number of times tracker_id appears
+        tracker_id_counter = dict()
+        for t, col_indices in alpha_match_cols_list_gt:
+            tracker_ids_t = None
+            for t_tracker, tracker_ids in tracker_ids_t_list:
+                if t_tracker == t:
+                    tracker_ids_t = tracker_ids
+                    break
+            if tracker_ids_t is None:
+                continue
+
+            for idx in col_indices:
+                if idx < len(tracker_ids_t):
+                    tracker_id = tracker_ids_t[idx]
+                    if tracker_id not in tracker_id_counter:
+                        tracker_id_counter[tracker_id] = 1
+                    else:
+                        tracker_id_counter[tracker_id] += 1
+
+        if not tracker_id_counter:
+            if verbose:
+                print(f"Warning: No tracker_id matched for seq {seq_gt}")
+            continue
+
+        # Step 7: Get value with the highest count
+        best_tracker_idx = max(tracker_id_counter.items(), key=lambda x: x[1])[0]
+
+        if best_tracker_idx >= len(unique_tracker_ids):
+            if verbose:
+                print(f"Error: tracker_idx {best_tracker_idx} out of bounds for unique_tracker_ids (len={len(unique_tracker_ids)}) for seq {seq_gt}")
+            continue
+
+        tracker_id = unique_tracker_ids[best_tracker_idx]
+
+        # Step 9: Find a matching item in submission based on seq and tracker_id
+        matched = None
+        for s in submission:
+            s_query = s["query"].lower().replace(" ", "-")
+            s_vid = s["vid"].split("_")[0]
+            s_seq = f"{s_vid}+{s_query}"
+
+            if s_seq == seq_gt and s["track_id"] == tracker_id:
+                matched = s
+                break
+
+        if matched:
+            submission_updated.append(matched)
+        else:
+            if verbose:
+                print(f"Warning: No matching submission found for seq {seq_gt} with tracker_id {tracker_id}")
+
+    return submission_updated
+
 def eval_submission(args, submission, ground_truth, verbose=True, match_number=False):
     """
     Args:
@@ -510,8 +648,10 @@ def eval_submission(args, submission, ground_truth, verbose=True, match_number=F
     first_matching_ground_truth_length = len(ground_truth)
     first_matching_submission_length = len(submission)
     print(f"First matching is done! {first_matching_ground_truth_length} ground truth entries have been saved. {first_matching_submission_length} submissions have been saved")
-
-    submission = filter_submission_by_gt(submission, ground_truth, id_mapping_path=args.id_mapping_path, verbose=False)
+    # Option 1
+    # submission = filter_submission_by_gt(submission, ground_truth, id_mapping_path=args.id_mapping_path, verbose=True)
+    # Option 2
+    submission = filter_submission_by_count(submission, ground_truth, id_mapping_path=args.id_mapping_path, verbose=True)
     print(f"ID matching is done! {len(ground_truth)} ground truth entries have been saved. {len(submission)} submissions have been saved")
 
     # match again between ground truth and submission_filtered
@@ -528,6 +668,8 @@ def eval_submission(args, submission, ground_truth, verbose=True, match_number=F
     second_matching_ground_truth_length = len(ground_truth)
     second_matching_submission_length = len(submission)
     print(f"Second matching is done! {second_matching_ground_truth_length} ground truth entries have been saved. {second_matching_submission_length} submissions have been saved")
+    # Option 1: In the end, 446 / 733 = 60.85% ground truth entries have been saved. 332 / 1201 = 27.64% submissions have been saved
+    # Option 2: In the end, 446 / 733 = 60.85% ground truth entries have been saved. 344 / 1201 = 28.64% submissions have been saved
     print(f"In the end, {second_matching_ground_truth_length} / {first_matching_ground_truth_length} = {second_matching_ground_truth_length/first_matching_ground_truth_length:.2%} ground truth entries have been saved. "
           f"{second_matching_submission_length} / {first_matching_submission_length} = {second_matching_submission_length/first_matching_submission_length:.2%} submissions have been saved")
 
