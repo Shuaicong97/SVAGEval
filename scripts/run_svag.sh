@@ -1,6 +1,6 @@
 # Usage: bash scripts/run_svag.sh
 INPUT_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/submission.json"
-COMBINED_RESULT_PATH="../data/ovis_prediction/combined_result_option2.json"
+COMBINED_RESULT_PATH="../data/ovis_prediction/combined_result.json"
 # spatial path definition
 #SEQMAP_FILE=""
 GT_FOLDER="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_gt/spatial/valid"
@@ -9,7 +9,7 @@ TRACKERS_TO_EVAL="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_predicti
 # temporal path definition
 SUBMISSION_PATH="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_prediction/temporal/ovis_valid_preds.jsonl"
 GT_PATH="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_gt/temporal/ovis_valid.jsonl"
-SAVE_PATH="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_prediction/temporal/ovis_val_preds_metrics_option2.json"
+SAVE_PATH="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/ovis_prediction/temporal/ovis_val_preds_metrics.json"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
