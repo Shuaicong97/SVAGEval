@@ -1,0 +1,7 @@
+.idea
+.vscode
+**.pyc
+**__pycache__
+data/gt/*
+data/predict/*
+error_log.txt

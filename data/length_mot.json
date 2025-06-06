@@ -1,0 +1,128 @@
+[
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-02",
+        "length": 600,
+        "frame_rate": 30
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-04",
+        "length": 1050,
+        "frame_rate": 30
+    },
+    {
+        "width": 640,
+        "height": 480,
+        "file_name": "MOT17-05",
+        "length": 837,
+        "frame_rate": 14
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-09",
+        "length": 525,
+        "frame_rate": 30
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-10",
+        "length": 654,
+        "frame_rate": 30
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-11",
+        "length": 900,
+        "frame_rate": 30
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-13",
+        "length": 750,
+        "frame_rate": 25
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-01",
+        "length": 450,
+        "frame_rate": 30
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-03",
+        "length": 1500,
+        "frame_rate": 30
+    },
+    {
+        "width": 640,
+        "height": 480,
+        "file_name": "MOT17-06",
+        "length": 1194,
+        "frame_rate": 14
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-07",
+        "length": 500,
+        "frame_rate": 30
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-08",
+        "length": 625,
+        "frame_rate": 30
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-12",
+        "length": 900,
+        "frame_rate": 30
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT17-14",
+        "length": 750,
+        "frame_rate": 25
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT20-01",
+        "length": 429,
+        "frame_rate": 25
+    },
+    {
+        "width": 1920,
+        "height": 1080,
+        "file_name": "MOT20-02",
+        "length": 2782,
+        "frame_rate": 25
+    },
+    {
+        "width": 1173,
+        "height": 880,
+        "file_name": "MOT20-03",
+        "length": 2405,
+        "frame_rate": 25
+    },
+    {
+        "width": 1654,
+        "height": 1080,
+        "file_name": "MOT20-05",
+        "length": 3315,
+        "frame_rate": 25
+    }
+]
