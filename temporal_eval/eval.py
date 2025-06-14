@@ -1,3 +1,6 @@
+"""
+compute_mr_r5() function from https://github.com/showlab/UniVTG/blob/32659ac7aeba21742a63274f30eba785fc57e247/eval/eval.py
+"""
 import numpy as np
 from collections import OrderedDict, defaultdict
 import json
@@ -103,7 +106,6 @@ def compute_mr_r1(submission, ground_truth, iou_thds=np.linspace(0.1, 0.95, 18))
     return iou_thd2recall_at_one, miou_at_one
 
 
-# https://github.com/showlab/UniVTG/blob/32659ac7aeba21742a63274f30eba785fc57e247/eval/eval.py
 def compute_mr_r5(submission, ground_truth, iou_thds=np.linspace(0.1, 0.95, 18)):
     """If a predicted segment has IoU >= iou_thd with one of the 1st GT segment, we define it positive"""
     iou_thds = [float(f"{e:.2f}") for e in iou_thds]

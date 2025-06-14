@@ -13,6 +13,7 @@ echo "✅ [convert_submission.py] done in $convert_formatted seconds"
 echo "[Remove existing id_mapping json file] ..."
 python3 run_svag.py --func remove
 
+# Parameters must be listed in order
 run_single_dataset() {
     local DATASET_NAME=$1
 
