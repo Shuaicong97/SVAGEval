@@ -1,15 +1,15 @@
 # SVAG Evaluation Toolkit
 This is the official evaluation code for Spatial-Temporal Video Action Grounding (SVAG) task.
-## Task Definition
+## Task definition
 Given a video and a natural language query, our task requires detecting and tracking all referents that satisfy the query, along with their corresponding most relevant moments.
 
 ## Evaluation
 The SVAG evaluation protocol consists of two complementary components: Spatial and Temporal evaluation, designed to assess both spatial accuracy and temporal consistency of visual grounding models.
-### Spatial Evaluation
+### Spatial evaluation
 Based on the [TrackEval](https://github.com/JonathonLuiten/TrackEval) repository.
 
 We use [HOTA](TrackEval/Readme.md) as the evaluation metric.
-### Temporal Evaluation
+### Temporal evaluation
 Based on the `standalone_eval` from [FlashVTG](https://github.com/Zhuo-Cao/FlashVTG) repository.
 
 We use [R1@X, R5@X, R10@X, mAP, mIoU](temporal_eval/README.md) as the evaluation metrics.
@@ -24,16 +24,43 @@ Download the packages. Python version 3.10.16 can be used for reproduce.
 pip install -r requirements.txt
 ```
 
-## Run
-Basic usage.
+## Running the code
+When ground truth for the test sets is known, the code can be run with the following command:
 ```
 cd scripts 
 sh run.sh
 ```
+Ensure the paths and filenames are correctly specified in `run.sh`.
 The final evaluation output will be written into `combined_result_mean.json`, as defined by `OUTPUT_FILE` in the `run.sh`.
 
 ## Format
-The prediction file is in JSON format. It should contain the following contents:
+The **ground truth** file is in JSON format. It should contain the following contents:
+```
+{
+    "datasets": [dataset]
+}
+
+dataset{
+    "name": string,
+    "queries": [query]
+}
+
+query{
+    "query_id": int,
+    "query": string
+    "video_id": int,
+    "video_name": string,
+    "video_length": int,
+    "tracks": [track]
+}
+
+track{
+    "track_id": int,
+    "spatial": [[x,y,width,height] or None],
+    "temporal": [[start,end]]
+}
+```
+The **prediction** file is in JSON format. It should contain the following contents:
 ```
 {
     "datasets": [dataset]
@@ -60,8 +87,8 @@ track{
 }
 ```
 
-It must combine all three subsets (OVIS, MOT17 and MOT20). The `name` in `dataset` must be one of `OVIS`, `MOT17`, or `MOT20`.
-Below is a concrete example:
+It must combine all three subsets (OVIS, MOT17 and MOT20).
+Below is a concrete example of prediction:
 ```
 {
     "datasets": [{
@@ -91,17 +118,31 @@ Below is a concrete example:
     }, ...]
 }
 ```
+| entry                      | description                                                                                                                                                                             |
+|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                     | `string`, dataset name. Must be one of `OVIS`, `MOT17`, or `MOT20`                                                                                                                      |
+| `track_id`                 | `int`, unique track id for each instance                                                                                                                                                |
+| `spatial`                  | `list(list or null)`, bounding box information. The list length is the length of the video. The value is either a specific box `[x,y,width,height]` or `null` (no object in this frame) |
+| `temporal` in ground truth | `list(list)`, temporal ground truth. Each sublist contains 2 elements, `[start,end]`                                                                                                    |    
+| `temporal` in prediction   | `list(list or null)`, moment retrieval predictions. The value is either a specific moment prediction `[start,end,score]` or `null` (no moment retrieval predictions)                    |    
 
 
-## Codabench Submission
+## Codabench submission
 To evaluate the results, please upload the submission file to the competition server. The submission file should be named ```submission.json``` and formatted as instructed above.
+
+## Evaluate on your own custom benchmark
+If you would like to evaluate performance without access to the ground truth of the official test set, you can create a custom benchmark in two ways:
+1. **Split the provided training set** into a new training and held-out test/validation subset. This allows you to estimate performance using known ground truth from the original data.
+2. **Use your dataset**, independent of the provided data. As long as your data is converted into the required ground truth and prediction formats, you can reuse the existing evaluation pipeline. See [Format](#format) for more details on the required format.
+
+
 
 ## License
 
 SVAGEval is released under the [MIT License](LICENSE).
 
 ## Contact
-If you encounter any problems with the code, feel free to post an issue. Please contact [Tanveer Hannan](https://www.dbs.ifi.lmu.de/cms/personen/mitarbeiter/hannan/) 
+If you encounter any problems with the code, feel free to post an issue. Please contact Shuaicong Wu ([niklaus.fangtasia@gmail.com](mailto:niklaus.fangtasia@gmail.com)) or [Tanveer Hannan](https://www.dbs.ifi.lmu.de/cms/personen/mitarbeiter/hannan/) 
 ([hannan@dbs.ifi.lmu.de](mailto:hannan@dbs.ifi.lmu.de)). If anything is unclear or hard to use, please leave a comment either via email or as an issue. We would love to help.
 
 ## Acknowledgement
