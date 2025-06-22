@@ -3,7 +3,7 @@ total_start=$(date +%s.%N)
 
 convert_start=$(date +%s.%N)
 echo "[Converting submission] ..."
-INPUT_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/mot25-stag_valid_prediction.json"
+INPUT_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/submission.json"
 python3 convert_submission.py --input_file "${INPUT_FILE}"
 convert_end=$(date +%s.%N)
 convert_duration=$(awk -v start="$convert_start" -v end="$convert_end" 'BEGIN {print end - start}')
