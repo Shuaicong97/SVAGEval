@@ -2,11 +2,12 @@ import json
 import sys
 import os
 import argparse
+from collections import OrderedDict
 
 
 def load_result(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
-        return json.load(f)["result"]
+        return json.load(f)
 
 
 def average_dicts(dicts):
@@ -37,7 +38,24 @@ if __name__ == '__main__':
 
     results = [load_result(f) for f in single_files]
     mean_result = average_dicts(results)
+
+    try:
+        hota = mean_result.get("HOTA", None)
+        miou = mean_result.get("mIoU", None)
+        if hota is not None and miou is not None:
+            m_hiou = round((hota + miou) / 2, 3)
+        else:
+            raise ValueError("Missing 'HOTA' or 'mIoU' key in averaged result.")
+    except Exception as e:
+        print(f"❌ Failed to calculate m-HIoU: {e}")
+        sys.exit(1)
+
+    ordered_result = OrderedDict()
+    ordered_result["m-HIoU"] = m_hiou
+    for k, v in mean_result.items():
+        ordered_result[k] = v
+
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump({"result": mean_result}, f, indent=4)
+        json.dump(ordered_result, f, indent=4)
 
     print(f"✅ final average result saved in: {output_path}")

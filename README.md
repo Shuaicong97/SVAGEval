@@ -25,13 +25,18 @@ pip install -r requirements.txt
 ```
 
 ## Running the code
-When ground truth for the test sets is known, the code can be run with the following command:
+When ground truth for the test sets is known, the code can be run with one of the following commands:
 ```
 cd scripts 
 sh run.sh
 ```
-Ensure the paths and filenames are correctly specified in `run.sh`.
-The final evaluation output will be written into `combined_result_mean.json`, as defined by `OUTPUT_FILE` in the `run.sh`.
+```
+cd scripts 
+python run.py
+```
+Ensure the paths and filenames are correctly specified in `run.sh` or `run.py`.
+The final evaluation output will be written into `combined_result_mean.json`, as defined by `OUTPUT_FILE` in `run.sh`
+or by `final_result` in `run.py`.
 
 ## Format
 The **ground truth** file is in JSON format. It should contain the following contents:

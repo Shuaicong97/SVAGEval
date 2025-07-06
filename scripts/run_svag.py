@@ -10,24 +10,45 @@ def remove_id_mapping(file_path):
     else:
         print(f"File does not exist: {file_path}")
 
+def parse_summary_txt(summary_path):
+    with open(summary_path, 'r') as f:
+        lines = f.readlines()
 
-def combine_evaluation_results(spatial_results, temporal_results, output_path):
-    with open(spatial_results, 'r') as f:
-        keys = f.readline().strip().split()
-        values = list(map(float, f.readline().strip().split()))
-        spatial_data = dict(zip(keys, values))
+    headers = lines[0].strip().split()
+    values = list(map(float, lines[1].strip().split()))
+    summary_data = dict(zip(headers, values))
 
-    with open(temporal_results, 'r') as f:
-        temporal_data = json.load(f)
+    keys_needed = ["HOTA", "DetA", "AssA", "DetRe", "DetPr", "AssRe", "AssPr", "LocA"]
+    extracted = {k: summary_data[k] for k in keys_needed if k in summary_data}
+    return extracted
 
-    result = {
-        "result": {
-            "spatial": spatial_data,
-            "temporal": temporal_data
-        }
+def parse_metrics_json(metrics_path):
+    with open(metrics_path, 'r') as f:
+        metrics = json.load(f)
+
+    brief = metrics["brief"]
+    rename_map = {
+        "MR-full-mIoU": "mIoU",
+        "MR-full-R1@0.1": "R1@0.1",
+        "MR-full-R1@0.3": "R1@0.3",
+        "MR-full-R1@0.5": "R1@0.5",
+        "MR-full-R5@0.1": "R5@0.1",
+        "MR-full-R5@0.3": "R5@0.3",
+        "MR-full-R5@0.5": "R5@0.5",
+        "MR-full-R10@0.1": "R10@0.1",
+        "MR-full-R10@0.3": "R10@0.3",
+        "MR-full-R10@0.5": "R10@0.5"
     }
 
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    extracted = {new_key: brief[old_key] for old_key, new_key in rename_map.items() if old_key in brief}
+    return extracted
+
+
+def combine_evaluation_results(spatial_results, temporal_results, output_path):
+    result = {}
+    result.update(parse_summary_txt(spatial_results))
+    result.update(parse_metrics_json(temporal_results))
+
     with open(output_path, 'w') as f:
         json.dump(result, f, indent=4)
 

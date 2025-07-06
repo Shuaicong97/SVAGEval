@@ -67,7 +67,7 @@ run_single_dataset "mot17" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT17/spatial" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT17/temporal/mot17_valid_preds.jsonl" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/gt/MOT17/temporal/mot17_valid.jsonl" \
-    "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT17/temporal/mot17_valid_preds_metrics.jsonl" \
+    "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT17/temporal/mot17_valid_preds_metrics.json" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT17/spatial/pedestrian_summary.txt" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT17/combined_result_mot17.json"
 
@@ -78,7 +78,7 @@ run_single_dataset "mot20" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/spatial" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/temporal/mot20_valid_preds.jsonl" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/gt/MOT20/temporal/mot20_valid.jsonl" \
-    "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/temporal/mot20_valid_preds_metrics.jsonl" \
+    "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/temporal/mot20_valid_preds_metrics.json" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/spatial/pedestrian_summary.txt" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/combined_result_mot20.json"
 

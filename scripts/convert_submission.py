@@ -181,7 +181,7 @@ def process_temporal_predictions(queries, output_dir, dataset_name):
             file.write(json.dumps(item) + "\n")
 
 
-def process_all_preditions(submission_file_path, output_base):
+def process_all_preditions(submission_file_path, output_base="../data/predict"):
     with open(submission_file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
