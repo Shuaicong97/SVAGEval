@@ -12,7 +12,10 @@ We use [HOTA](TrackEval/Readme.md) as the evaluation metric.
 ### Temporal evaluation
 Based on the `standalone_eval` from [FlashVTG](https://github.com/Zhuo-Cao/FlashVTG) repository.
 
-We use [R1@X, R5@X, R10@X, mAP, mIoU](temporal_eval/README.md) as the evaluation metrics.
+We use [mIoU, R1@X, R5@X, R10@X](temporal_eval/README.md) as the evaluation metrics.
+
+Furthermore, we introduce **m-HIoU** as the metric to rank submissions on the competition server.
+It is the average of HOTA and mIoU.
 ## Preparation
 Clone this repository.
 ```

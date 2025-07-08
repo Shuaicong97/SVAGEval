@@ -16,7 +16,6 @@ python3 ../TrackEval/scripts/run_mot_challenge.py \
 --TRACKERS_FOLDER "$TRACKERS_FOLDER" \
 --GT_LOC_FORMAT {gt_folder}{video_id}/{expression_id}/gt.txt \
 --TRACKERS_TO_EVAL "$TRACKERS_TO_EVAL" \
---USE_PARALLEL True \
---NUM_PARALLEL_CORES 2 \
+--USE_PARALLEL False \
 --SKIP_SPLIT_FOL True \
 --PLOT_CURVES False
