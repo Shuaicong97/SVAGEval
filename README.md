@@ -41,6 +41,15 @@ Ensure the paths and filenames are correctly specified in `run.sh` or `run.py`.
 The final evaluation output will be written into `combined_result_mean.json`, as defined by `OUTPUT_FILE` in `run.sh`
 or by `final_result` in `run.py`.
 
+Optional: Add arguments in `spatial_eval/evaluate.sh` to change the number of cores running `run_mot_challenge.py`:
+```
+python3 ../TrackEval/scripts/run_mot_challenge.py \
+...
+--USE_PARALLEL True \
+--NUM_PARALLEL_CORES 2 \
+...
+```
+
 ## Format
 The **ground truth** file is in JSON format. It should contain the following contents:
 ```
@@ -136,7 +145,13 @@ Below is a concrete example of prediction:
 
 
 ## Codabench submission
-To evaluate the results, please upload the submission file to the competition server. The submission file should be named ```submission.json``` and formatted as instructed above.
+To submit your results to [Codabench]() for evaluation, please follow these steps:
+
+1. **Save your predictions** in a file named `submission.json`, formatted as described above for the prediction file.
+2. **Compress** the `submission.json` file into a ZIP archive named `submission.zip`.
+3. **Upload** the `submission.zip` file to the competition server on Codabench for evaluation.
+
+Note: Make sure the zip archive contains **only** the `submission.json` file at the root level (not inside a subfolder).
 
 ## Evaluate on your own custom benchmark
 If you would like to evaluate performance without access to the ground truth of the official test set, you can create a custom benchmark in two ways:
