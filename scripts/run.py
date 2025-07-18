@@ -142,9 +142,9 @@ if __name__ == '__main__':
     parser.add_argument("--id_mapping_path", type=str, default='../results/id_mapping.jsonl',
                         help="path to id mapping file generated from MOT gt-prediction id matching, equals to SAVE_PATH defined in trackeval/eval")
     parser.add_argument('--submission_file', type=str, default='../data/submission.json', help='Path to submission file')
-    parser.add_argument('--ovis_result', type=str, default='../data/predict/OVIS/combined_result_ovis.json', help='Path to ovis result')
-    parser.add_argument('--mot17_result', type=str, default='../data/predict/MOT17/combined_result_mot17.json', help='Path to mot17 result')
-    parser.add_argument('--mot20_result', type=str, default='../data/predict/MOT20/combined_result_mot20.json', help='Path to mot20 result')
+    parser.add_argument('--ovis_result', type=str, default='../data/predict/OVIS/combined_result.json', help='Path to ovis result')
+    parser.add_argument('--mot17_result', type=str, default='../data/predict/MOT17/combined_result.json', help='Path to mot17 result')
+    parser.add_argument('--mot20_result', type=str, default='../data/predict/MOT20/combined_result.json', help='Path to mot20 result')
     parser.add_argument('--final_result', type=str, default='../data/predict/combined_result_mean.json', help='Path to the final average result')
 
     args = parser.parse_args()

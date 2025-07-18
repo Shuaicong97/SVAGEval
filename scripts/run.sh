@@ -82,9 +82,9 @@ run_single_dataset "mot20" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/spatial/pedestrian_summary.txt" \
     "/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/combined_result_mot20.json"
 
-OVIS_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/OVIS/combined_result_ovis.json"
-MOT17_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT17/combined_result_mot17.json"
-MOT20_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/combined_result_mot20.json"
+OVIS_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/OVIS/combined_result.json"
+MOT17_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT17/combined_result.json"
+MOT20_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/MOT20/combined_result.json"
 OUTPUT_FILE="/Users/shuaicongwu/PycharmProjects/SVAGEval/data/predict/combined_result_mean.json"
 
 echo "[Calculating average results] ..."
