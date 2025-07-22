@@ -145,7 +145,7 @@ Below is a concrete example of prediction:
 
 
 ## Codabench submission
-To submit your results to [Codabench]() for evaluation, please follow these steps:
+To submit your results to [Codabench](https://www.codabench.org/competitions/9743/) for evaluation, please follow these steps:
 
 1. **Save your predictions** in a file named `submission.json`, formatted as described above for the prediction file.
 2. **Compress** the `submission.json` file into a ZIP archive named `submission.zip`.
