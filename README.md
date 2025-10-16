@@ -170,3 +170,16 @@ If you encounter any problems with the code, feel free to post an issue. Please 
 
 ## Acknowledgement
 We refer to the repositories [TrackEval](https://github.com/JonathonLuiten/TrackEval) and [FlashVTG](https://github.com/Zhuo-Cao/FlashVTG). Thanks for their wonderful works.
+
+If you're using SVAGEval in your research or applications, please cite using this BibTeX:
+```bibtex
+@misc{hannan2025svagbenchlargescalebenchmarkmultiinstance,
+  title={SVAG-Bench: A Large-Scale Benchmark for Multi-Instance Spatio-temporal Video Action Grounding},
+  author={Tanveer Hannan and Shuaicong Wu and Mark Weber and Suprosanna Shit and Jindong Gu and Rajat Koner and Aljoša Ošep and Laura Leal-Taixé and Thomas Seidl},
+  year={2025},
+  eprint={2510.13016},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV},
+  url={https://arxiv.org/abs/2510.13016},
+}
+```
